@@ -105,4 +105,166 @@ plot_img_label(img,lbl)
 None;
 ```
 
-<img src="REF_IMAGES/D1C1_%20%20%20SIFIG.png" width=65% height=65%>
+<img src="REF_IMAGES/Image_Star_Dist.png" width=65% height=65%>
+
+**Begin model setup: currently just using stardist suggestions**
+
+```python
+# 32 is a good default choice (see 1_data.ipynb)
+n_rays = 32
+
+# Use OpenCL-based computations for data generator during training (requires 'gputools')
+use_gpu = False and gputools_available()
+
+# Predict on subsampled grid for increased efficiency and larger field of view
+grid = (2,2)
+
+conf = Config2D (
+    n_rays       = n_rays,
+    grid         = grid,
+    use_gpu      = use_gpu,
+    n_channel_in = n_channel,
+)
+print(conf)
+vars(conf)
+```
+**Check if GPU is avaliable and limit usage**
+
+```python 
+if use_gpu:
+    from csbdeep.utils.tf import limit_gpu_memory
+    # adjust as necessary: limit GPU memory to be used by TensorFlow to leave some to OpenCL-based computations
+    limit_gpu_memory(0.8)
+    # alternatively, try this:
+    # limit_gpu_memory(None, allow_growth=True)
+```
+
+**Choose which model is the base**
+
+```python 
+model = StarDist2D(conf, name='stardist', basedir='models')
+```
+
+**Choose median object size**
+
+```python 
+median_size = calculate_extents(list(Y), np.median)
+fov = np.array(model._axes_tile_overlap('YX'))
+print(f"median object size:      {median_size}")
+print(f"network field of view :  {fov}")
+if any(median_size > fov):
+    print("WARNING: median object size larger than field of view of the neural network.")
+```    
+
+**Set up data augmentgation**
+
+```python 
+def random_fliprot(img, mask): 
+    assert img.ndim >= mask.ndim
+    axes = tuple(range(mask.ndim))
+    perm = tuple(np.random.permutation(axes))
+    img = img.transpose(perm + tuple(range(mask.ndim, img.ndim))) 
+    mask = mask.transpose(perm) 
+    for ax in axes: 
+        if np.random.rand() > 0.5:
+            img = np.flip(img, axis=ax)
+            mask = np.flip(mask, axis=ax)
+    return img, mask 
+
+def random_intensity_change(img):
+    img = img*np.random.uniform(0.6,2) + np.random.uniform(-0.2,0.2)
+    return img
+
+
+def augmenter(x, y):
+    """Augmentation of a single input/label image pair.
+    x is an input image
+    y is the corresponding ground-truth label image
+    """
+    x, y = random_fliprot(x, y)
+    x = random_intensity_change(x)
+    # add some gaussian noise
+    sig = 0.02*np.random.uniform(0,1)
+    x = x + sig*np.random.normal(0,1,x.shape)
+    return x, y
+    ```
+    **Plot examples of augmented data**
+    
+    ```python 
+    # plot some augmented examples
+img, lbl = X[0],Y[0]
+plot_img_label(img, lbl)
+for _ in range(3):
+    img_aug, lbl_aug = augmenter(img,lbl)
+    plot_img_label(img_aug, lbl_aug, img_title="image augmented", lbl_title="label augmented")
+    ```
+    
+    <img src="REF_IMAGES/Augmentt.png" width=65% height=65%>
+    
+    **Retrain stardist with hand segmented images**
+    
+    ```python 
+    quick_demo = False
+
+if quick_demo:
+    print (
+        "NOTE: This is only for a quick demonstration!\n"
+        "      Please set the variable 'quick_demo = False' for proper (long) training.",
+        file=sys.stderr, flush=True
+    )
+    model.train(X_trn, Y_trn, validation_data=(X_val,Y_val), augmenter=augmenter,
+                epochs=2, steps_per_epoch=10)
+
+    print("====> Stopping training and loading previously trained demo model from disk.", file=sys.stderr, flush=True)
+    model = StarDist2D.from_pretrained('2D_demo')
+else:
+    model.train(X_trn, Y_trn, validation_data=(X_val,Y_val), augmenter=augmenter,  epochs=400)
+None;
+```
+   **Investigate on some training data**
+   
+   ```python 
+   Y_val_pred = [model.predict_instances(x, n_tiles=model._guess_n_tiles(x), show_tile_progress=False)[0]
+              for x in tqdm(X_val)]
+   plot_img_label(X_val[0],Y_val[0], lbl_title="label GT")
+   plot_img_label(X_val[0],Y_val_pred[0], lbl_title="label Pred")  
+   ```
+   <img src="REF_IMAGES/pred.png" width=65% height=65%>
+   
+   ### Use this model on a whoel cleared mousebrain 
+   
+   **Load in an imgage (here we use 6 month old)**
+   
+   ```python 
+   X=tifffile.imread('E:\\VV_STEP1\\6_Month_50perc_Reduced_1080x1280.tif')
+   patches=X
+   ```
+   
+   **Run the model on each slice and then make it a numpy array**
+   
+   ```python 
+   predicted_patches = []
+
+for i in range(patches.shape[0]):
+        single_patch = patches[i]
+        img = normalize(single_patch, 1,99.8, axis=axis_norm)
+        labels, details = model.predict_instances(img)
+        predicted_patches.append(labels)
+        
+    predicted_patches = np.array(predicted_patches)
+    star_dist_binary= (predicted_patches>1).astype(int)
+    ```
+    **Write out the binary plaque segmentations as an image stack** 
+    
+    ```python
+    io.imsave('E:\\VV_STEP1\\STARDIST_BINARY_OUT_6_Month_50perc_Reduced_1080x1280.tiff', img_as_uint(star_dist_binary))
+    ```
+    
+    **If you use napari to visualise data this will open a viewer**
+    
+    ```python
+    viewer = napari.Viewer()
+    layer = viewer.add_image(patches)
+    layer= viewer.add_image(predicted_patches, name='star-dist')
+    napari.run()
+    ```

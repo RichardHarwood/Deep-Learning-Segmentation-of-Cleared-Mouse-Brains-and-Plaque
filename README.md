@@ -225,6 +225,7 @@ else:
     model.train(X_trn, Y_trn, validation_data=(X_val,Y_val), augmenter=augmenter,  epochs=400)
 None;
 ```
+  
    **Investigate on some training data**
    
    ```python 
@@ -239,37 +240,45 @@ None;
    
    **Load in an imgage (here we use 6 month old)**
    
-   ```python 
+```python 
    X=tifffile.imread('E:\\VV_STEP1\\6_Month_50perc_Reduced_1080x1280.tif')
    patches=X
-   ```
-   
-   **Run the model on each slice and then make it a numpy array**
-   
-   ```python 
-   predicted_patches = []
+```
+   **Run star dist on every slice using a for loop**
+  
+  ```python 
+  predicted_patches = []
 
 for i in range(patches.shape[0]):
         single_patch = patches[i]
         img = normalize(single_patch, 1,99.8, axis=axis_norm)
         labels, details = model.predict_instances(img)
         predicted_patches.append(labels)
-        
-    predicted_patches = np.array(predicted_patches)
-    star_dist_binary= (predicted_patches>1).astype(int)
-    ```
-    **Write out the binary plaque segmentations as an image stack** 
-    
-    ```python
-    io.imsave('E:\\VV_STEP1\\STARDIST_BINARY_OUT_6_Month_50perc_Reduced_1080x1280.tiff', img_as_uint(star_dist_binary))
-    ```
-    
-    **If you use napari to visualise data this will open a viewer**
-    
-    ```python
-    viewer = napari.Viewer()
-    layer = viewer.add_image(patches)
-    layer= viewer.add_image(predicted_patches, name='star-dist')
-    napari.run()
-    ```
+  
+  predicted_patches = np.array(predicted_patches)
+  star_dist_binary= (predicted_patches>1).astype(int)
+  ```
+  
+  **Export the segmentation**
+  ```python 
+  io.imsave('E:\\VV_STEP1\\STARDIST_BINARY_OUT_6_Month_50perc_Reduced_1080x1280.tiff', img_as_uint(star_dist_binary))
+  ```
+ 
   </details>
+  
+  Segmentations of the hippocampus and cerebal cortex were done manually in Avizo, during this process any star dist segmentations of plaque that fell with in either part of the brain were assinged to that area.
+  <br>
+  This creates 4 unique objects:<br>
+   * A segmentation of the hippocampus
+   * A segmentation of plaque in the hippocampus 
+   * A segmentation of the cerebal cortex
+   * A segmentation of plaque in the cerebal cortex 
+
+Each of these objects is exported as a TIFF stack.
+
+From here it really doesnt matter where you get the anatomical information from or make images and videos. <br>
+I do find that a script is really helpful - because you can get initial movies, data and images quickly (and you can also create a batch process).<br>
+Here is the output from Visualise an Analyse The 6 Month Mouse Brain.ipynb. <br>
+
+<img src="REF_IMAGES/6_Month_Brainbrain_MOVIE_GIF.gif" width=100% height=100%>
+  

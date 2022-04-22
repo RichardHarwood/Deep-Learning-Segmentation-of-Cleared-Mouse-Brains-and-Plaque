@@ -15,6 +15,10 @@ We note that we had to do very little beyond the example on the Stardist github,
 
 #### Python workflow to train star dist and segment unseen data (note that Juypter notebooks are also stored in this project)
 
+<details>
+<summary> View Python Workflow that uses Machine Learning to Segment Plaque in 3D </summary>
+<br>
+
 **Import packages** 
 ```python 
 from __future__ import print_function, unicode_literals, absolute_import, division
@@ -231,7 +235,7 @@ None;
    ```
    <img src="REF_IMAGES/pred.png" width=65% height=65%>
    
-   ### Use this model on a whoel cleared mousebrain 
+   ### Use this model on a whole cleared mousebrain 
    
    **Load in an imgage (here we use 6 month old)**
    
@@ -268,3 +272,4 @@ for i in range(patches.shape[0]):
     layer= viewer.add_image(predicted_patches, name='star-dist')
     napari.run()
     ```
+  </details>

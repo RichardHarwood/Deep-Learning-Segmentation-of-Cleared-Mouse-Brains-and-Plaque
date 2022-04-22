@@ -69,3 +69,40 @@ X = [normalize(x,1,99.8,axis=axis_norm) for x in tqdm(X)]
 Y = [fill_label_holes(y) for y in tqdm(Y)]
 ```
 **Split into training and testing data**
+
+```python 
+assert len(X) > 1, "not enough training data"
+rng = np.random.RandomState(42)
+ind = rng.permutation(len(X))
+n_val = max(1, int(round(0.15 * len(ind))))
+ind_train, ind_val = ind[:-n_val], ind[-n_val:]
+X_val, Y_val = [X[i] for i in ind_val]  , [Y[i] for i in ind_val]
+X_trn, Y_trn = [X[i] for i in ind_train], [Y[i] for i in ind_train] 
+print('number of images: %3d' % len(X))
+print('- training:       %3d' % len(X_trn))
+print('- validation:     %3d' % len(X_val))
+```
+**Define a plot function**
+
+```python
+def plot_img_label(img, lbl, img_title="image", lbl_title="label", **kwargs):
+    fig, (ai,al) = plt.subplots(1,2, figsize=(12,5), gridspec_kw=dict(width_ratios=(1.25,1)))
+    im = ai.imshow(img, cmap='gray', clim=(0,1))
+    ai.set_title(img_title)    
+    fig.colorbar(im, ax=ai)
+    al.imshow(lbl, cmap=lbl_cmap)
+    al.set_title(lbl_title)
+    plt.tight_layout()
+   ```
+**Plot the original image (left) and the hand segmented label (right)**
+
+```python
+i = min(9, len(X)-1)
+img, lbl = X[i], Y[i]
+assert img.ndim in (2,3)
+img = img if (img.ndim==2 or img.shape[-1]==3) else img[...,0]
+plot_img_label(img,lbl)
+None;
+```
+
+<img src="REF_IMAGES/D1C1_%20%20%20SIFIG.png" width=65% height=65%>

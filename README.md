@@ -280,5 +280,5 @@ From here it really doesnt matter where you get the anatomical information from 
 I do find that a script is really helpful - because you can get initial movies, data and images quickly (and you can also create a batch process).<br>
 Here is the output from Visualise an Analyse The 6 Month Mouse Brain.ipynb. <br>
 
-<img src="REF_IMAGES/6_Month_Brainbrain_MOVIE_GIF.gif" width=100% height=100%>
+<img src="REF_IMAGES/6_Month_Brainbrain_MOVIE_GIF.gif" width=55% height=55%>
   

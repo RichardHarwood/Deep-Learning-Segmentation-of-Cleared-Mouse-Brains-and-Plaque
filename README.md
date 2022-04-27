@@ -131,6 +131,7 @@ conf = Config2D (
 )
 print(conf)
 vars(conf)
+  
 ```
 **Check if GPU is avaliable and limit usage**
 
@@ -158,11 +159,10 @@ print(f"median object size:      {median_size}")
 print(f"network field of view :  {fov}")
 if any(median_size > fov):
     print("WARNING: median object size larger than field of view of the neural network.")
-```    
-
+```   
 **Set up data augmentgation**
-
-```python 
+  
+```python
 def random_fliprot(img, mask): 
     assert img.ndim >= mask.ndim
     axes = tuple(range(mask.ndim))
@@ -181,33 +181,31 @@ def random_intensity_change(img):
 
 
 def augmenter(x, y):
-    """Augmentation of a single input/label image pair.
-    x is an input image
-    y is the corresponding ground-truth label image
-    """
     x, y = random_fliprot(x, y)
     x = random_intensity_change(x)
     # add some gaussian noise
     sig = 0.02*np.random.uniform(0,1)
     x = x + sig*np.random.normal(0,1,x.shape)
     return x, y
-    ```
-    **Plot examples of augmented data**
+  
+```
+  
+  **Plot examples of augmented data**
     
-    ```python 
+```python 
     # plot some augmented examples
 img, lbl = X[0],Y[0]
 plot_img_label(img, lbl)
 for _ in range(3):
     img_aug, lbl_aug = augmenter(img,lbl)
     plot_img_label(img_aug, lbl_aug, img_title="image augmented", lbl_title="label augmented")
-    ```
-    
-    <img src="REF_IMAGES/Augmentt.png" width=65% height=65%>
-    
-    **Retrain stardist with hand segmented images**
-    
-    ```python 
+  
+```  
+ <img src="REF_IMAGES/Augment.png" width=65% height=65%>  
+  
+**Retrain stardist with hand segmented images**  
+  
+```python
     quick_demo = False
 
 if quick_demo:
@@ -224,18 +222,23 @@ if quick_demo:
 else:
     model.train(X_trn, Y_trn, validation_data=(X_val,Y_val), augmenter=augmenter,  epochs=400)
 None;
-```
+```    
   
-   **Investigate on some training data**
-   
+**Investigate on some training data**  
+  
    ```python 
    Y_val_pred = [model.predict_instances(x, n_tiles=model._guess_n_tiles(x), show_tile_progress=False)[0]
               for x in tqdm(X_val)]
    plot_img_label(X_val[0],Y_val[0], lbl_title="label GT")
    plot_img_label(X_val[0],Y_val_pred[0], lbl_title="label Pred")  
-   ```
-   <img src="REF_IMAGES/pred.png" width=65% height=65%>
+  
+   ```  
+  
+  <img src="REF_IMAGES/pred.png" width=65% height=65%>
+  
    
+
+
    ### Use this model on a whole cleared mousebrain 
    
    **Load in an imgage (here we use 6 month old)**

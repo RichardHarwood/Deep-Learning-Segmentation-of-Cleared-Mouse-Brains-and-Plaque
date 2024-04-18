@@ -1,8 +1,8 @@
 # 3D Segmentation of Cleared Mouse Brains and Plaque.
 
 #### Contributors: 
-Veronika Valova:   <br>
 Richard Harwood: https://github.com/RichardHarwood <br>
+Veronika Valova:   <br>
 
 ## Introduction
 The bioimage analysis goal here was to segment the plaque from cleared mouse brains across different ages and investigate the influence of saffron on plaque density.
